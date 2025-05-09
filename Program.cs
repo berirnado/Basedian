@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using Microsoft.Data.SqlClient;
 
 
@@ -21,22 +22,35 @@ namespace Basedian
                     connection.Open();
 
                     Console.WriteLine("State: {0}", connection.State);
-                    Console.WriteLine("ConnectionString: {0}", connection.ConnectionString);
+                    Console.WriteLine("Database: {0}", connection.Database);
+
+                    string path = GetProjectDirectory();
+
+                    string dbName = connection.Database;
 
                     var transaction = connection.BeginTransaction();
 
                     SqlCommand command = new SqlCommand("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'", connection);
 
-                    command.Transaction = transaction;  
+                    command.Transaction = transaction;
+
+                    string dbFolderPath = path + "/" + dbName;
+                    Directory.CreateDirectory(dbFolderPath);
 
                     // Loops each table in database 
                     using (SqlDataReader reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            Console.WriteLine(String.Format("{0}",
-                                reader[0]));
-                            Thread.Sleep(20);
+                            string filePath = dbFolderPath + "/" + reader[0] + ".txt";
+                            if (!File.Exists(filePath))
+                            {
+                                using (StreamWriter sw = File.CreateText(filePath))
+                                {
+                                    sw.WriteLine(reader[0]);
+                                }
+                                Console.WriteLine(String.Format("Created text file: {0}", reader[0] + ".txt"));
+                            }
                         }
                     }
 
@@ -48,6 +62,19 @@ namespace Basedian
                 throw new Exception("Error connecting to database:", ex);
             }
        
+        }
+
+        static string GetProjectDirectory()
+        {
+            string baseDir = AppContext.BaseDirectory;
+            var directory = new DirectoryInfo(baseDir);
+
+            while (directory != null && !directory.GetFiles("*.csproj").Any())
+            {
+                directory = directory.Parent;
+            }
+
+            return directory?.FullName ?? baseDir;
         }
     }
 }
