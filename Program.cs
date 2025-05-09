@@ -42,15 +42,17 @@ namespace Basedian
                     {
                         while (reader.Read())
                         {
-                            string filePath = dbFolderPath + "/" + reader[0] + ".txt";
+                            string filePath = dbFolderPath + "/" + reader[0] + ".md";
                             if (!File.Exists(filePath))
                             {
                                 using (StreamWriter sw = File.CreateText(filePath))
                                 {
                                     sw.WriteLine(reader[0]);
                                 }
-                                Console.WriteLine(String.Format("Created text file: {0}", reader[0] + ".txt"));
+
+                                Console.WriteLine(String.Format("Created text file: {0}", reader[0] + ".md"));
                             }
+                            Thread.Sleep(20);
                         }
                     }
 
